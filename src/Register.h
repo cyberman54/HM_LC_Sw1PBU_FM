@@ -1,24 +1,28 @@
-//- Software config --------------------------------------------------------------------------------------------------------
-//#define USE_SERIAL
+#ifndef REGISTER_H__
+#define REGISTER_H__
 
-#if defined(USE_SERIAL)
-//#define CC_DBG															// debug messages of the CC module, ~0.2k program space
-//#define SM_DBG															// debug messages of the SM module, ~1k program space
-//#define AS_DBG																// debug messages of the HM module, ~0.6k program space
-//#define AS_DBG_Explain												// debug messages of the HM module, ~5k program space
+//#define USE_SERIAL
+//#define firstLoad
+
+//- Software config --------------------------------------------------------------------------------------------------------
+#ifdef USE_SERIAL
+//#define CC_DBG						// debug messages of the CC module, ~0.2k program space
+//#define SM_DBG						// debug messages of the SM module, ~1k program space
+//#define AS_DBG						// debug messages of the HM module, ~0.6k program space
+//#define AS_DBG_Explain				// debug messages of the HM module, ~5k program space
 #define RL_DBG
 #endif
 
 //- settings of HM device for HM class -------------------------------------------------------------------------------------
 const uint8_t devParam[] PROGMEM = {
 	/* Firmware version 1 byte */ 0x15,												// don't know for what it is good for
-	/* Model ID	        2 byte */ 0xF0, 0xA9,										//0x00, 0x6C							// model ID, describes HM hardware. we should use high values due to HM starts from 0
-	/* Serial ID       10 byte */ 'P', 'S', '0', '0', '0', '0', '0', '0', '0', '2', // serial ID, needed for pairing
+	/* Model ID	        2 byte */ 0xF0, 0xA9,										// 0x00, 0x6C							// model ID, describes HM hardware. we should use high values due to HM starts from 0
+	/* Serial ID       10 byte */ 'L', 'E', 'Q', '0', '2', '3', '5', '7', '1', '9', // serial ID, needed for pairing
 	/* Sub Type ID      1 byte */ 0x10,												// not needed for FHEM, it's something like a group ID
 	/* Device Info      3 byte */ 0x41, 0x01, 0x00									// describes device, not completely clear yet. includes amount of channels
 };
 
-const uint8_t HMID[3] = {0x25, 0x77, 0xF0}; // 2577F0 very important, must be unique. identifier for the device in the network
+const uint8_t HMID[3] = {0x6E, 0xF2, 0xFF}; // very important, must be unique. identifier for the device in the network
 const uint8_t maxRetries = 3;				// how often a string should be send out until we get an answer
 const uint16_t timeOut = 700;				// time out for ACK handling
 
@@ -127,7 +131,7 @@ struct
 	 {{1, 2, 1}, {4, 1, 6}}}};
 
 //- -----------------------------------------------------------------------------------------------------------------------
-// - peer db config -------------------------------------------------------------------------------------------------------
+// - peer database config -------------------------------------------------------------------------------------------------
 #define maxChannel 4
 #define maxPeer 6
 static uint32_t peerdb[maxChannel][maxPeer];
@@ -175,6 +179,7 @@ struct s_peer_regChan_actor
 	uint8_t lgSwJtDlyOn : 4;   // reg:0x8C, sReg:140
 	uint8_t lgSwJtDlyOff : 4;  // reg:0x8C, sReg:140.4
 };
+
 struct s_peer_regChan_remote
 {								// chn:6, lst:4
 	uint8_t peerNeedsBurst : 1; // reg:0x01, sReg:1
@@ -265,46 +270,6 @@ static uint16_t regMcPtr[] = {
 	(uint16_t)&regMC.ch4.l1,
 	(uint16_t)&regMC.ch4.l3,
 };
-/*
-struct s_peer_regChan_actor {                 // chn:1, lst:3
-	uint8_t shCtDlyOn           :4; // reg:0x02, sReg:2
-	uint8_t shCtDlyOff          :4; // reg:0x02, sReg:2.4
-	uint8_t shCtOn              :4; // reg:0x03, sReg:3
-	uint8_t shCtOff             :4; // reg:0x03, sReg:3.4
-	uint8_t shCtValLo;              // reg:0x04, sReg:4
-	uint8_t shCtValHi;              // reg:0x05, sReg:5
-	uint8_t shOnDly;                // reg:0x06, sReg:6
-	uint8_t shOnTime;               // reg:0x07, sReg:7
-	uint8_t shOffDly;               // reg:0x08, sReg:8
-	uint8_t shOffTime;              // reg:0x09, sReg:9
-	uint8_t shActionType        :2; // reg:0x0A, sReg:10
-	uint8_t                     :4;
-	uint8_t shOffTimeMode       :1; // reg:0x0A, sReg:10.6
-	uint8_t shOnTimeMode        :1; // reg:0x0A, sReg:10.7
-	uint8_t shSwJtOn            :4; // reg:0x0B, sReg:11
-	uint8_t shSwJtOff           :4; // reg:0x0B, sReg:11.4
-	uint8_t shSwJtDlyOn         :4; // reg:0x0C, sReg:12
-	uint8_t shSwJtDlyOff        :4; // reg:0x0C, sReg:12.4
-	uint8_t lgCtDlyOn           :4; // reg:0x82, sReg:130
-	uint8_t lgCtDlyOff          :4; // reg:0x82, sReg:130.4
-	uint8_t lgCtOn              :4; // reg:0x83, sReg:131
-	uint8_t lgCtOff             :4; // reg:0x83, sReg:131.4
-	uint8_t lgCtValLo;              // reg:0x84, sReg:132
-v	uint8_t lgCtValHi;              // reg:0x85, sReg:133
-	uint8_t lgOnDly;                // reg:0x86, sReg:134
-	uint8_t lgOnTime;               // reg:0x87, sReg:135
-	uint8_t lgOffDly;               // reg:0x88, sReg:136
-	uint8_t lgOffTime;              // reg:0x89, sReg:137
-	uint8_t lgActionType        :2; // reg:0x8A, sReg:138
-	uint8_t                     :3;
-	uint8_t lgMultiExec         :1; // reg:0x8A, sReg:138.5
-	uint8_t lgOffTimeMode       :1; // reg:0x8A, sReg:138.6
-	uint8_t lgOnTimeMode        :1; // reg:0x8A, sReg:138.7
-	uint8_t lgSwJtOn            :4; // reg:0x8B, sReg:139
-	uint8_t lgSwJtOff           :4; // reg:0x8B, sReg:139.4
-	uint8_t lgSwJtDlyOn         :4; // reg:0x8C, sReg:140
-	uint8_t lgSwJtDlyOff        :4; // reg:0x8C, sReg:140.4
-};*/
 
 struct
 {
@@ -352,7 +317,7 @@ struct
 //  if 'firstLoad' is defined, hm.init function will step in mainSettings function;
 //  be careful, whole eeprom block will be overwritten. you will loose your former settings...
 //- -----------------------------------------------------------------------------------------------------------------------
-//#define firstLoad
+#ifdef firstLoad
 static void mainSettings(uint16_t *regPtr, uint16_t *peerPtr)
 {
 	static s_regs reg;
@@ -412,3 +377,6 @@ static void mainSettings(uint16_t *regPtr, uint16_t *peerPtr)
 	peerdb[2][1] = 0x01578520; // 207C41 ch1/self1
 	peerdb[2][2] = 0x02578520; // 207C41 ch1/self2
 }
+#endif // firstload
+
+#endif

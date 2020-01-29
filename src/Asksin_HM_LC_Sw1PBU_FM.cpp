@@ -1,5 +1,3 @@
-//#define USE_SERIAL
-
 //- load library's --------------------------------------------------------------------------------------------------------
 #include <Arduino.h>
 #include <stdint.h>
@@ -32,36 +30,9 @@ const char helptext1[] PROGMEM = { // help text for serial console
 	"\n"
 	"  $nn for HEX input (e.g. $AB,$AC ); b[] = byte, i[]. = integer "
 	"\n"};
-#if defined(USE_SERIAL)
-const InputParser::Commands cmdTab[] PROGMEM = {
-	{'h', 0, showHelp},
-	{'p', 0, sendPairing},
-	{'s', 1, sendCmdStr},
-	{'e', 0, showEEprom},
-	{'f', 2, writeEEprom},
-	{'c', 0, clearEEprom},
-	{'t', 0, testConfig},
 
-	{'b', 1, buttonSend},
-	{'a', 0, stayAwake},
-
-	{'r', 0, resetDevice},
-	{0}};
-InputParser parser(50, (InputParser::Commands *)cmdTab);
-#endif
-
-//- homematic communication -----------------------------------------------------------------------------------------------
-const s_jumptable jumptable[] PROGMEM = { // jump table for HM communication
-	{0x01, 0x0E, HM_Status_Request},
-	{0x11, 0x02, HM_Set_Cmd},
-	{0x11, 0x04, HM_Reset_Cmd},
-	{0x3E, 0x00, HM_Switch_Event},
-	{0x40, 0x00, HM_Remote_Event},
-	{0xFF, 0xFF, HM_Config_Changed},
-	{0x0}};
-HM hm((s_jumptable *)jumptable, regMcPtr); // declare class for handling HM communication
-BK bk[3];								   // declare 1 inxtStatnces of the button key handler
-RL rl[2];								   // declare one inxtStatnce of relay class
+BK bk[3]; // declare instance of the button key handler
+RL rl[2]; // declare instance of relay class
 
 //- current sensor
 unsigned long lastCurrentInfoSentTime = 0;
@@ -71,109 +42,11 @@ unsigned long lastSensorImpulsLength = 0;
 unsigned long lastCurrentSenseImpulsLength = 0;
 boolean lastCurrentSense = false;
 boolean lastCurrentPin = false;
+boolean isInitialized = false;
 const uint8_t pinCurrent = 31;
 const uint8_t pinRelay = 12;
 const unsigned long minImpulsLength = 2000;
 const uint8_t sendSensorIntervalSec = 150;
-
-ISR(PCINT0_vect)
-{
-	currentImpuls();
-}
-
-boolean isInitialized = false;
-//- main functions --------------------------------------------------------------------------------------------------------
-void setup()
-{
-
-#if defined(USE_SERIAL)
-	Serial.begin(57600); // starting serial messages
-#else
-	Serial.end();
-#endif
-
-	// some power savings
-	ADCSRA = 0;			   // disable ADC
-	power_all_disable();   // all devices off
-	power_timer0_enable(); // we need timer0 for delay function
-	//power_timer2_enable();													// we need timer2 for PWM
-	power_usart0_enable(); // it's the serial console
-	//power_twi_enable();														// i2c interface, not needed yet
-	power_spi_enable(); // enables SPI master
-	//power_adc_enable();
-
-	// init HM module
-	hm.init();			 // initialize HM module
-	hm.ld.config(0);	 // configure the status led pin
-	hm.setPowerMode(0);  // power mode for HM device
-	hm.setConfigEvent(); // reread config
-
-	// configure some buttons - config(tIdx, tPin, tTimeOutShortDbl, tLongKeyTime, tTimeOutLongDdbl, tCallBack)
-	bk[0].config(0, 15, 0, 5000, 15000, buttonState); // button 0 for channel 0 for send pairing string, and double press for reseting device config
-	bk[1].config(1, 14, 0, 1000, 5000, buttonState);  // channel 1 to 2 as push button
-	bk[2].config(2, 8, 0, 1000, 5000, buttonState);
-
-	// init relay stuff
-	pinMode(pinRelay, OUTPUT);
-	rl[0].config(3, &relayState, &setInternalRelay, &hm, 1, 1);
-
-	// fake relay channel for current sensor
-	rl[1].config(4, &relayState, &setVirtualRelay, &hm, 1, 1);
-
-#if defined(USE_SERIAL)
-	// show help screen and config
-	showHelp();		// shows help screen on serial console
-	showSettings(); // show device settings
-
-	Serial << F("version 025") << '\n'; // show device settings
-#endif
-
-	// Enable interrupt on PA0
-	pinMode(pinCurrent, INPUT);
-	PCMSK0 |= (1 << PCINT0);
-	PCICR |= (1 << PCIE0);
-
-	isInitialized = true;
-}
-
-void loop()
-{
-	// poll functions for serial console, HM module, button key handler and relay handler
-#if defined(USE_SERIAL)
-	parser.poll(); // handle serial input from console
-#endif
-	hm.poll();  // HOMEMATIC task scheduler
-	bk->poll(); // key handler poll
-	rl->poll(); // relay handler poll
-
-	if (millis() - lastCurrentInfoSentTime > sendSensorIntervalSec * 1000UL)
-	{
-		lastCurrentInfoSentTime = millis();
-		hm.sendSensorData(0, 0, lastSensorImpulsLength / (50 * sendSensorIntervalSec), 0, 0); // send message
-		lastSensorImpulsLength = 0;
-	}
-	if (millis() - lastCurrentSenseTime > 500)
-	{
-		cli();
-		lastCurrentSenseTime = millis();
-
-		// Calculate current sense boolean: 500ms*50Hz = 25 Impulses
-		boolean currentSense = lastCurrentSenseImpulsLength > (25 * minImpulsLength);
-		lastCurrentSenseImpulsLength = 0;
-
-		// Act on changes
-		if (currentSense != lastCurrentSense)
-		{
-			rl[1].setCurStat(currentSense ? 3 : 6);
-#if defined(USE_SERIAL)
-			Serial << F("New Powersense: ") << currentSense << '\n';
-#endif
-			hm.sendInfoActuatorStatus(4, currentSense ? 0xC8 : 0x00, 0);
-			lastCurrentSense = currentSense;
-		}
-		sei();
-	}
-}
 
 void currentImpuls()
 {
@@ -198,6 +71,11 @@ void currentImpuls()
 	}
 	sei();
 	return;
+}
+
+ISR(PCINT0_vect)
+{
+	currentImpuls();
 }
 
 //- key handler functions -------------------------------------------------------------------------------------------------
@@ -289,6 +167,7 @@ void HM_Status_Request(uint8_t cnl, uint8_t *data, uint8_t len)
 	if (cnl == 3)
 		rl[0].sendStatus(); // send the current status
 }
+
 void HM_Set_Cmd(uint8_t cnl, uint8_t *data, uint8_t len)
 {
 	// message from master to client for setting a defined value to client channel
@@ -303,6 +182,7 @@ void HM_Set_Cmd(uint8_t cnl, uint8_t *data, uint8_t len)
 	if (cnl == 4)
 		rl[1].trigger11(data[0], data + 1, (len > 4) ? data + 3 : NULL);
 }
+
 void HM_Reset_Cmd(uint8_t cnl, uint8_t *data, uint8_t len)
 {
 #if defined(RL_DBG)
@@ -312,6 +192,7 @@ void HM_Reset_Cmd(uint8_t cnl, uint8_t *data, uint8_t len)
 	if (cnl == 0)
 		hm.reset(); // do a reset only if channel is 0
 }
+
 void HM_Switch_Event(uint8_t cnl, uint8_t *data, uint8_t len)
 {
 // sample needed!
@@ -327,7 +208,7 @@ void HM_Remote_Event(uint8_t cnl, uint8_t *data, uint8_t len)
 	// cnl = indicates client device channel
 	// data[0] the remote channel, but also the information for long key press - ((data[0] & 0x40)>>6) extracts the long key press
 	// data[1] = typically the key counter of the remote
-#if defined(USE_SERIAL)
+#ifdef USE_SERIAL
 	Serial << F("\nRemote_Event; cnl: ") << pHex(cnl) << F(", data: ") << pHex(data, len) << "\n\n";
 #endif
 	if (cnl == 3)
@@ -335,23 +216,54 @@ void HM_Remote_Event(uint8_t cnl, uint8_t *data, uint8_t len)
 	if (cnl == 4)
 		rl[1].trigger40(((data[0] & 0x40) >> 6), data[1], (void *)&regMC.ch4.l3);
 }
+
 void HM_Sensor_Event(uint8_t cnl, uint8_t *data, uint8_t len)
 {
 	// sample needed!
 	// ACK is requested but will send automatically
-#if defined(USE_SERIAL)
+#ifdef USE_SERIAL
 	Serial << F("\nSensor_Event; cnl: ") << pHex(cnl) << F(", data: ") << pHex(data, len) << "\n\n";
 #endif
 }
+
 void HM_Config_Changed(uint8_t cnl, uint8_t *data, uint8_t len)
 {
-#if defined(USE_SERIAL)
+#ifdef USE_SERIAL
 	Serial << F("config changed\n");
 #endif
 }
 
-#if defined(USE_SERIAL)
+//- homematic communication -----------------------------------------------------------------------------------------------
+const s_jumptable jumptable[] PROGMEM = { // jump table for HM communication
+	{0x01, 0x0E, HM_Status_Request},
+	{0x11, 0x02, HM_Set_Cmd},
+	{0x11, 0x04, HM_Reset_Cmd},
+	{0x3E, 0x00, HM_Switch_Event},
+	{0x40, 0x00, HM_Remote_Event},
+	{0xFF, 0xFF, HM_Config_Changed},
+	{0x0}};
+HM hm((s_jumptable *)jumptable, regMcPtr); // declare class for handling HM communication
+
+#ifdef USE_SERIAL
+
 //- config functions ------------------------------------------------------------------------------------------------------
+
+const InputParser::Commands cmdTab[] PROGMEM = {
+	{'h', 0, showHelp},
+	{'p', 0, sendPairing},
+	{'s', 1, sendCmdStr},
+	{'e', 0, showEEprom},
+	{'f', 2, writeEEprom},
+	{'c', 0, clearEEprom},
+	{'t', 0, testConfig},
+
+	{'b', 1, buttonSend},
+	{'a', 0, stayAwake},
+
+	{'r', 0, resetDevice},
+	{0}};
+InputParser parser(50, (InputParser::Commands *)cmdTab);
+
 void sendCmdStr()
 {																			// reads a sndStr from console and put it in the send queue
 	memcpy(hm.send.data, parser.buffer, parser.count());					// take over the parsed byte data
@@ -365,7 +277,7 @@ void sendPairing()
 
 void showEEprom()
 {
-	uint16_t start, len;
+	word start, len;
 	uint8_t buf[32];
 
 	parser >> start >> len;
@@ -382,7 +294,7 @@ void showEEprom()
 }
 void writeEEprom()
 {
-	uint16_t addr;
+	word addr;
 	uint8_t data;
 
 	for (uint8_t i = 0; i < parser.count(); i += 3)
@@ -435,4 +347,98 @@ void resetDevice()
 	hm.reset();
 	Serial << F("reset done\n");
 }
+
 #endif
+
+//- main functions --------------------------------------------------------------------------------------------------------
+void setup()
+{
+
+#ifdef USE_SERIAL
+	Serial.begin(57600); // starting serial messages
+#else
+	Serial.end();
+#endif
+
+	// some power savings
+	ADCSRA = 0;			   // disable ADC
+	power_all_disable();   // all devices off
+	power_timer0_enable(); // we need timer0 for delay function
+	//power_timer2_enable();													// we need timer2 for PWM
+	power_usart0_enable(); // it's the serial console
+	//power_twi_enable();														// i2c interface, not needed yet
+	power_spi_enable(); // enables SPI master
+	//power_adc_enable();
+
+	// init HM module
+	hm.init();			 // initialize HM module
+	hm.ld.config(0);	 // configure the status led pin
+	hm.setPowerMode(0);  // power mode for HM device
+	hm.setConfigEvent(); // reread config
+
+	// configure some buttons - config(tIdx, tPin, tTimeOutShortDbl, tLongKeyTime, tTimeOutLongDdbl, tCallBack)
+	bk[0].config(0, 15, 0, 5000, 15000, buttonState); // button 0 for channel 0 for send pairing string, and double press for reseting device config
+	bk[1].config(1, 14, 0, 1000, 5000, buttonState);  // channel 1 to 2 as push button
+	bk[2].config(2, 8, 0, 1000, 5000, buttonState);
+
+	// init relay stuff
+	pinMode(pinRelay, OUTPUT);
+	rl[0].config(3, &relayState, &setInternalRelay, &hm, 1, 1);
+
+	// fake relay channel for current sensor
+	rl[1].config(4, &relayState, &setVirtualRelay, &hm, 1, 1);
+
+#ifdef USE_SERIAL
+	// show help screen and config
+	showHelp();		// shows help screen on serial console
+	showSettings(); // show device settings
+
+	Serial << F("version 025") << '\n'; // show device settings
+#endif
+
+	// Enable interrupt on PA0
+	pinMode(pinCurrent, INPUT);
+	PCMSK0 |= (1 << PCINT0);
+	PCICR |= (1 << PCIE0);
+
+	isInitialized = true;
+}
+
+void loop()
+{
+	// poll functions for serial console, HM module, button key handler and relay handler
+#ifdef USE_SERIAL
+	parser.poll(); // handle serial input from console
+#endif
+	hm.poll();  // HOMEMATIC task scheduler
+	bk->poll(); // key handler poll
+	rl->poll(); // relay handler poll
+
+	if (millis() - lastCurrentInfoSentTime > sendSensorIntervalSec * 1000UL)
+	{
+		lastCurrentInfoSentTime = millis();
+		hm.sendSensorData(0, 0, lastSensorImpulsLength / (50 * sendSensorIntervalSec), 0, 0); // send message
+		lastSensorImpulsLength = 0;
+	}
+	if (millis() - lastCurrentSenseTime > 500)
+	{
+		cli();
+		lastCurrentSenseTime = millis();
+
+		// Calculate current sense boolean: 500ms*50Hz = 25 Impulses
+		boolean currentSense = lastCurrentSenseImpulsLength > (25 * minImpulsLength);
+		lastCurrentSenseImpulsLength = 0;
+
+		// Act on changes
+		if (currentSense != lastCurrentSense)
+		{
+			rl[1].setCurStat(currentSense ? 3 : 6);
+#ifdef USE_SERIAL
+			Serial << F("New Powersense: ") << currentSense << '\n';
+#endif
+			hm.sendInfoActuatorStatus(4, currentSense ? 0xC8 : 0x00, 0);
+			lastCurrentSense = currentSense;
+		}
+		sei();
+	}
+}

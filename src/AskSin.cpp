@@ -690,7 +690,7 @@ void HM::send_NACK(void)
 	uint8_t payLoad[] = {0x80}; // NACK
 	send_prep(recv_rCnt, 0x80, 0x02, recv_reID, payLoad, 1);
 }
-#if defined(USE_SERIAL)
+#ifdef USE_SERIAL
 // some debug functions
 void HM::printSettings()
 {
@@ -1694,7 +1694,7 @@ void HM::initRegisters()
 	}
 
 // load default settings to eeprom if firstLoad is defined
-#if defined(firstLoad)
+#ifdef firstLoad 
 	uint16_t regPtr, peerPtr;
 	mainSettings(&regPtr, &peerPtr);
 	eeprom_write_block((const void *)regPtr, (void *)&ee->regs, sizeof(ee->regs));
@@ -1812,12 +1812,13 @@ uint8_t HM::getRegList(uint8_t slcPtr, uint8_t slcLen, uint8_t *buf)
 }
 void HM::getMainChConfig(void)
 {
-	uint8_t ret, peer[] = {0xff, 0xff, 0xff, 0x00}; // some declarations
+	uint8_t peer[] = {0xff, 0xff, 0xff, 0x00}; // some declarations
 	s_slcVar sV;
 
 	// get cnl0 list0 for internal and external use
-	ret = getSliceDetail(0, 0, (uint8_t *)&broadCast, &sV);
-	getEEpromBlock(sV.phyAddr + (uint16_t)&ee->regs, sV.phyLen, &regDev);
+	uint8_t ret = getSliceDetail(0, 0, (uint8_t *)&broadCast, &sV);
+	if (ret)
+		getEEpromBlock(sV.phyAddr + (uint16_t)&ee->regs, sV.phyLen, &regDev);
 
 	// step through the channels and lists and load registers
 	uint8_t cnt = 0;
@@ -2698,7 +2699,7 @@ void RL::setCurStat(int newCurStat)
 	lastTrig = 0;
 }
 
-#if defined(USE_SERIAL)
+#ifdef USE_SERIAL
 //- -----------------------------------------------------------------------------------------------------------------------
 //- serial parser and display functions -----------------------------------------------------------------------------------
 //- Parser sketch from: http://jeelabs.org/2010/10/24/parsing-input-commands/
@@ -2897,7 +2898,7 @@ uint32_t intTimeCvt(uint16_t iTime)
 	return (uint32_t)tByte * (iTime >> 5) * 100;
 }
 
-#if defined(USE_SERIAL)
+#ifdef USE_SERIAL
 //- serial print functions
 char pHex(const uint8_t val)
 {

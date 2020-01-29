@@ -1,3 +1,6 @@
+#ifndef ASKSIN_H__
+#define ASKSIN_H__
+
 //- -----------------------------------------------------------------------------------------------------------------------
 // AskSin driver implementation
 // 2013-08-03 <horst@diebittners.de> Creative Commons - http://creativecommons.org/licenses/by-nc-sa/3.0/de/
@@ -237,7 +240,7 @@ public: //----------------------------------------------------------------------
 	void sendSensorData(uint32_t energyCounter, uint32_t power, uint16_t current, uint16_t voltage, uint8_t frequency);
 
 	// some debug functions
-#if defined(USE_SERIAL)
+#ifdef USE_SERIAL
 	void printSettings(void);
 	void printConfig(void);
 #endif
@@ -542,3 +545,5 @@ ISR(PCINT0_vect);
 ISR(PCINT1_vect);
 ISR(PCINT2_vect);
 ISR(PCINT3_vect);
+
+#endif
