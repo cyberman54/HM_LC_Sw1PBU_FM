@@ -400,6 +400,7 @@ void LD::toggle()
 //- with a lot of support from martin876 at FHEM forum
 //- -----------------------------------------------------------------------------------------------------------------------
 // general functions for initializing and operating of module
+
 HM::HM(s_jumptable *jtPtr, void *mcPtr)
 {
 	jTblPtr = jtPtr;			 // jump table for call back functions
@@ -1694,7 +1695,7 @@ void HM::initRegisters()
 	}
 
 // load default settings to eeprom if firstLoad is defined
-#ifdef firstLoad 
+#ifdef firstLoad
 	uint16_t regPtr, peerPtr;
 	mainSettings(&regPtr, &peerPtr);
 	eeprom_write_block((const void *)regPtr, (void *)&ee->regs, sizeof(ee->regs));
@@ -2279,6 +2280,73 @@ void HM::setEEpromBlock(uint16_t addr, uint8_t len, void *ptr)
 	// todo: lock against reading
 	// todo: extend range for i2c eeprom
 	eeprom_write_block((const void *)ptr, (void *)addr, len);
+}
+
+//- -----------------------------------------------------------------------------------------------------------------------
+//- main settings to be written very first time to eeprom -----------------------------------------------------------------
+//  if 'firstLoad' is defined, hm.init function will step in mainSettings function;
+//  be careful, whole eeprom block will be overwritten. you will loose your former settings...
+//- -----------------------------------------------------------------------------------------------------------------------
+void HM::mainSettings(uint16_t *regPtr, uint16_t *peerPtr)
+{
+	static s_regs reg;
+	*regPtr = (uint16_t)&reg;
+	*peerPtr = (uint16_t)&peerdb;
+
+	reg.ch_0.intKeyVisib = 0;
+	reg.ch_0.pairCentral[0] = HMCID[0];
+	reg.ch_0.pairCentral[1] = HMCID[1];
+	reg.ch_0.pairCentral[2] = HMCID[2];
+
+	reg.ch_1.list1.dblPress = 2;
+	reg.ch_1.list1.sign = 0;
+	reg.ch_1.list1.longPress = 4;
+
+	reg.ch_1.peer[0].peerNeedsBurst = 1;
+	reg.ch_1.peer[0].expectAES = 0;
+	reg.ch_1.peer[1].peerNeedsBurst = 1;
+	reg.ch_1.peer[1].expectAES = 0;
+	reg.ch_1.peer[2].peerNeedsBurst = 0;
+	reg.ch_1.peer[2].expectAES = 0;
+	reg.ch_2.peer[0].peerNeedsBurst = 1;
+	reg.ch_2.peer[0].expectAES = 0;
+	reg.ch_2.peer[1].peerNeedsBurst = 1;
+	reg.ch_2.peer[1].expectAES = 0;
+	reg.ch_2.peer[2].peerNeedsBurst = 0;
+	reg.ch_2.peer[2].expectAES = 0;
+
+	reg.ch_3.peer[0].shActionType = 1;
+	reg.ch_3.peer[0].lgActionType = 1;
+	reg.ch_3.peer[0].shSwJtOff = 3;
+	reg.ch_3.peer[0].lgSwJtOff = 3;
+	reg.ch_3.peer[0].shSwJtOn = 6;
+	reg.ch_3.peer[0].lgSwJtOn = 6;
+
+	reg.ch_3.peer[1].shActionType = 0;
+	reg.ch_3.peer[1].lgActionType = 1;
+	reg.ch_3.peer[1].shSwJtOff = 3;
+	reg.ch_3.peer[1].lgSwJtOff = 3;
+	reg.ch_3.peer[1].shSwJtOn = 3;
+	reg.ch_3.peer[1].lgSwJtOn = 3;
+
+	reg.ch_3.peer[2].shActionType = 0;
+	reg.ch_3.peer[2].lgActionType = 1;
+	reg.ch_3.peer[2].shSwJtOff = 6;
+	reg.ch_3.peer[2].lgSwJtOff = 6;
+	reg.ch_3.peer[2].shSwJtOn = 6;
+	reg.ch_3.peer[2].lgSwJtOn = 6;
+
+	/*
+	peerdb[0][0] = 0x013BD621; // 21D63B ch1
+	peerdb[0][1] = 0x0129D621; // 21D629 ch1
+	peerdb[0][2] = 0x03578520; // 207C41 ch3/self3   208557
+	peerdb[1][0] = 0x013BD621; // 21D63B ch1
+	peerdb[1][1] = 0x0129D621; // 21D629 ch1
+	peerdb[1][2] = 0x03578520; // 207C41 ch3/self3
+	peerdb[2][0] = 0x01563412; // 123456 ch1
+	peerdb[2][1] = 0x01578520; // 207C41 ch1/self1
+	peerdb[2][2] = 0x02578520; // 207C41 ch1/self2
+	*/
 }
 
 //- -----------------------------------------------------------------------------------------------------------------------

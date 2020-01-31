@@ -22,6 +22,7 @@
 #include "Register.h"
 
 // - general struct and declarations ---------------------------------------------------------------------------------------
+
 struct s_jumptable
 {
 	uint8_t code;							  // one byte command code
@@ -187,6 +188,8 @@ public: //----------------------------------------------------------------------
 	CC cc; // OK, init of the RF/TX module
 	LD ld;
 
+	uint32_t peerdb[maxChannel][maxPeer];
+
 #define send_payLoad (send.data + 10) // payload for send queue
 #define recv_payLoad (recv.data + 10) // payload for receive queue
 
@@ -215,6 +218,13 @@ public: //----------------------------------------------------------------------
 		uint16_t wdTme; // clock cycle of watch dog in ms
 		uint32_t nxtTO; // check millis() timer against, if millis() >= nextTimeout go in powerdown
 	} powr;
+
+	struct s_EEPROM
+	{
+		unsigned short magNbr;
+		uint32_t peerdb[maxChannel][maxPeer];
+		s_regs regs;
+	};
 
 	s_jumptable *jTblPtr; // jump table pointer for event handling
 
@@ -331,7 +341,6 @@ public:
 // - Storage Management -----------------------------------------------------------------------------------------------
 #define magicNumber 1967 // magic number to detect first run
 
-	//s_EEPROM *ee;																// pointer to settings in eeprom
 	s_regDev regDev;				// structure which holds List0
 	s_EEPROM *ee;					// pointer to eeprom structure
 	uint16_t mcConfPtr;				// pointer to main channel structure
@@ -339,6 +348,7 @@ public:
 
 	// init registers and load default config
 	void initRegisters(void); // init eeprom and fill registers from eeprom
+	void mainSettings(uint16_t *regPtr, uint16_t *peerPtr);
 
 	// slice table functions
 	struct s_slcVar

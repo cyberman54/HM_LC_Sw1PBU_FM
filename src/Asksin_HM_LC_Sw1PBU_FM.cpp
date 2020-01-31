@@ -2,7 +2,6 @@
 #include <Arduino.h>
 #include <stdint.h>
 #include "AskSin.h"
-#include "Asksin_HM_LC_Sw1PBU_FM.h"
 
 //- serial communication --------------------------------------------------------------------------------------------------
 const char helptext1[] PROGMEM = { // help text for serial console
@@ -156,6 +155,20 @@ void setVirtualRelay(uint8_t cnl, uint8_t tValue)
 }
 
 //- HM functions ----------------------------------------------------------------------------------------------------------
+
+static s_regCpy regMC;
+static uint16_t regMcPtr[] = {
+	(uint16_t)&regMC.ch0,
+	(uint16_t)&regMC.ch1.l1,
+	(uint16_t)&regMC.ch1.l4,
+	(uint16_t)&regMC.ch2.l1,
+	(uint16_t)&regMC.ch2.l4,
+	(uint16_t)&regMC.ch3.l1,
+	(uint16_t)&regMC.ch3.l3,
+	(uint16_t)&regMC.ch4.l1,
+	(uint16_t)&regMC.ch4.l3,
+};
+
 void HM_Status_Request(uint8_t cnl, uint8_t *data, uint8_t len)
 {
 // message from master to client while requesting the channel specific status
@@ -242,11 +255,23 @@ const s_jumptable jumptable[] PROGMEM = { // jump table for HM communication
 	{0x40, 0x00, HM_Remote_Event},
 	{0xFF, 0xFF, HM_Config_Changed},
 	{0x0}};
+
 HM hm((s_jumptable *)jumptable, regMcPtr); // declare class for handling HM communication
 
+//- config functions ------------------------------------------------------------------------------------------------------
 #ifdef USE_SERIAL
 
-//- config functions ------------------------------------------------------------------------------------------------------
+void sendCmdStr();
+void sendPairing();
+void showEEprom();
+void writeEEprom();
+void clearEEprom();
+void showHelp();
+void showSettings();
+void testConfig();
+void buttonSend();
+void stayAwake();
+void resetDevice();
 
 const InputParser::Commands cmdTab[] PROGMEM = {
 	{'h', 0, showHelp},

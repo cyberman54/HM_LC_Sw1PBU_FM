@@ -22,9 +22,10 @@ const uint8_t devParam[] PROGMEM = {
 	/* Device Info      3 byte */ 0x41, 0x01, 0x00									// describes device, not completely clear yet. includes amount of channels
 };
 
-const uint8_t HMID[3] = {0x6E, 0xF2, 0xFF}; // very important, must be unique. identifier for the device in the network
-const uint8_t maxRetries = 3;				// how often a string should be send out until we get an answer
-const uint16_t timeOut = 700;				// time out for ACK handling
+const uint8_t HMID[3] = {0x6E, 0xF2, 0xFE};  // very important, must be unique. identifier for the device in the network
+const uint8_t HMCID[3] = {0x25, 0x77, 0xF0}; // optional, HMID of CCU (makes device paired)
+const uint8_t maxRetries = 3;				 // how often a string should be send out until we get an answer
+const uint16_t timeOut = 700;				 // time out for ACK handling
 
 //- -----------------------------------------------------------------------------------------------------------------------
 //- channel slice definition ----------------------------------------------------------------------------------------------
@@ -58,6 +59,16 @@ struct s_sliceStrTpl
 	unsigned char nbrBytes;
 	unsigned short phyAddr;
 };
+
+//- -----------------------------------------------------------------------------------------------------------------------
+//- Device definition -----------------------------------------------------------------------------------------------------
+//        Channels:      2
+//        highest List:  3
+//        possible peers:6
+//- Memory usage
+//        Slices:17
+//        EEPROM size:189 fits internal
+//        const size: 92
 
 // regAddr,nbrBytes,phyAddr
 const s_sliceStrTpl sliceStr[] = {
@@ -134,7 +145,6 @@ struct
 // - peer database config -------------------------------------------------------------------------------------------------
 #define maxChannel 4
 #define maxPeer 6
-static uint32_t peerdb[maxChannel][maxPeer];
 const uint8_t peermax[] = {6, 6, 6};
 
 //- -----------------------------------------------------------------------------------------------------------------------
@@ -219,22 +229,6 @@ struct s_regDev
 	uint8_t lowBatLimitBA;  // reg:0x12, sReg:18
 };
 
-struct s_regs
-{
-	s_regDev ch_0;
-	s_regChan_remote ch_1;
-	s_regChan_remote ch_2;
-	s_regChan_actor ch_3;
-	s_regChan_actor ch_4;
-};
-
-struct s_EEPROM
-{
-	unsigned short magNbr;
-	uint32_t peerdb[maxChannel][maxPeer];
-	s_regs regs;
-};
-
 //- -----------------------------------------------------------------------------------------------------------------------
 //- struct to provide register settings to user sketch --------------------------------------------------------------------
 
@@ -257,18 +251,15 @@ struct s_regCpy
 	s_cpy_regChan_remote ch2;
 	s_cpy_regChan_actor ch3;
 	s_cpy_regChan_actor ch4;
-} static regMC;
+};
 
-static uint16_t regMcPtr[] = {
-	(uint16_t)&regMC.ch0,
-	(uint16_t)&regMC.ch1.l1,
-	(uint16_t)&regMC.ch1.l4,
-	(uint16_t)&regMC.ch2.l1,
-	(uint16_t)&regMC.ch2.l4,
-	(uint16_t)&regMC.ch3.l1,
-	(uint16_t)&regMC.ch3.l3,
-	(uint16_t)&regMC.ch4.l1,
-	(uint16_t)&regMC.ch4.l3,
+struct s_regs
+{
+	s_regDev ch_0;
+	s_regChan_remote ch_1;
+	s_regChan_remote ch_2;
+	s_regChan_actor ch_3;
+	s_regChan_actor ch_4;
 };
 
 struct
@@ -301,82 +292,5 @@ struct
 	{0, 0, 0, 0, 0},																																																					  // device itself -> no defaults/no peering
 	{4, sizeof(s_peer_regChan_remote), (const uint8_t *)&default_regChans.default_regChan_remote, (const uint8_t *)&default_regChans.default_regChan_remote, (const uint8_t *)&default_regChans.default_regChan_remote},				  // remote
 };
-
-//- -----------------------------------------------------------------------------------------------------------------------
-//- Device definition -----------------------------------------------------------------------------------------------------
-//        Channels:      2
-//        highest List:  3
-//        possible peers:6
-//- Memory usage
-//        Slices:17
-//        EEPROM size:189 fits internal
-//        const size: 92
-
-//- -----------------------------------------------------------------------------------------------------------------------
-//- main settings to be written very first time to eeprom -----------------------------------------------------------------
-//  if 'firstLoad' is defined, hm.init function will step in mainSettings function;
-//  be careful, whole eeprom block will be overwritten. you will loose your former settings...
-//- -----------------------------------------------------------------------------------------------------------------------
-#ifdef firstLoad
-static void mainSettings(uint16_t *regPtr, uint16_t *peerPtr)
-{
-	static s_regs reg;
-	*regPtr = (uint16_t)&reg;
-	*peerPtr = (uint16_t)&peerdb;
-
-	reg.ch_0.intKeyVisib = 0;
-	reg.ch_0.pairCentral[0] = 0x25;
-	reg.ch_0.pairCentral[1] = 0x77;
-	reg.ch_0.pairCentral[2] = 0xF0;
-
-	reg.ch_1.list1.dblPress = 2;
-	reg.ch_1.list1.sign = 0;
-	reg.ch_1.list1.longPress = 4;
-
-	reg.ch_1.peer[0].peerNeedsBurst = 1;
-	reg.ch_1.peer[0].expectAES = 0;
-	reg.ch_1.peer[1].peerNeedsBurst = 1;
-	reg.ch_1.peer[1].expectAES = 0;
-	reg.ch_1.peer[2].peerNeedsBurst = 0;
-	reg.ch_1.peer[2].expectAES = 0;
-	reg.ch_2.peer[0].peerNeedsBurst = 1;
-	reg.ch_2.peer[0].expectAES = 0;
-	reg.ch_2.peer[1].peerNeedsBurst = 1;
-	reg.ch_2.peer[1].expectAES = 0;
-	reg.ch_2.peer[2].peerNeedsBurst = 0;
-	reg.ch_2.peer[2].expectAES = 0;
-
-	reg.ch_3.peer[0].shActionType = 1;
-	reg.ch_3.peer[0].lgActionType = 1;
-	reg.ch_3.peer[0].shSwJtOff = 3;
-	reg.ch_3.peer[0].lgSwJtOff = 3;
-	reg.ch_3.peer[0].shSwJtOn = 6;
-	reg.ch_3.peer[0].lgSwJtOn = 6;
-
-	reg.ch_3.peer[1].shActionType = 0;
-	reg.ch_3.peer[1].lgActionType = 1;
-	reg.ch_3.peer[1].shSwJtOff = 3;
-	reg.ch_3.peer[1].lgSwJtOff = 3;
-	reg.ch_3.peer[1].shSwJtOn = 3;
-	reg.ch_3.peer[1].lgSwJtOn = 3;
-
-	reg.ch_3.peer[2].shActionType = 0;
-	reg.ch_3.peer[2].lgActionType = 1;
-	reg.ch_3.peer[2].shSwJtOff = 6;
-	reg.ch_3.peer[2].lgSwJtOff = 6;
-	reg.ch_3.peer[2].shSwJtOn = 6;
-	reg.ch_3.peer[2].lgSwJtOn = 6;
-
-	peerdb[0][0] = 0x013BD621; // 21D63B ch1
-	peerdb[0][1] = 0x0129D621; // 21D629 ch1
-	peerdb[0][2] = 0x03578520; // 207C41 ch3/self3   208557
-	peerdb[1][0] = 0x013BD621; // 21D63B ch1
-	peerdb[1][1] = 0x0129D621; // 21D629 ch1
-	peerdb[1][2] = 0x03578520; // 207C41 ch3/self3
-	peerdb[2][0] = 0x01563412; // 123456 ch1
-	peerdb[2][1] = 0x01578520; // 207C41 ch1/self1
-	peerdb[2][2] = 0x02578520; // 207C41 ch1/self2
-}
-#endif // firstload
 
 #endif
