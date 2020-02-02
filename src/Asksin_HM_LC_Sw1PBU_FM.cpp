@@ -177,8 +177,8 @@ void HM_Status_Request(uint8_t cnl, uint8_t *data, uint8_t len)
 #if defined(RL_DBG)
 	Serial << F("\nxtStattus_Request; cnl: ") << pHex(cnl) << F(", data: ") << pHex(data, len) << "\n\n";
 #endif
-	if (cnl == 3)
-		rl[0].sendStatus(); // send the current status
+	// if (cnl == 3)
+	//	rl[0].sendStatus(); // send the current status
 }
 
 void HM_Set_Cmd(uint8_t cnl, uint8_t *data, uint8_t len)
@@ -461,7 +461,7 @@ void loop()
 #ifdef USE_SERIAL
 			Serial << F("New Powersense: ") << currentSense << '\n';
 #endif
-			hm.sendInfoActuatorStatus(4, currentSense ? 0xC8 : 0x00, 0);
+			// hm.sendInfoActuatorStatus(4, currentSense ? 0xC8 : 0x00, 0);
 			lastCurrentSense = currentSense;
 		}
 		sei();

@@ -15,14 +15,14 @@
 
 //- settings of HM device for HM class -------------------------------------------------------------------------------------
 const uint8_t devParam[] PROGMEM = {
-	/* Firmware version 1 byte */ 0x16,												// don't know for what it is good for
+	/* Firmware version 1 byte */ 0x15,												// don't know for what it is good for
 	/* Model ID	        2 byte */ 0xF0, 0xA9,										// model ID, describes HM hardware. we should use high values due to HM starts from 0
 	/* Serial ID       10 byte */ 'L', 'E', 'Q', '0', '2', '3', '5', '7', '1', '9', // serial ID, needed for pairing
 	/* Sub Type ID      1 byte */ 0x10,												// not needed for FHEM, it's something like a group ID
 	/* Device Info      3 byte */ 0x41, 0x01, 0x00									// describes device, not completely clear yet. includes amount of channels
 };
 
-const uint8_t HMID[3] = {0x6E, 0xF2, 0xFE};  // very important, must be unique. identifier for the device in the network
+const uint8_t HMID[3] = {0x29, 0xF2, 0x6F};  // very important, must be unique. identifier for the device in the network
 const uint8_t HMCID[3] = {0x25, 0x77, 0xF0}; // optional, HMID of CCU (makes device paired)
 const uint8_t maxRetries = 3;				 // how often a string should be send out until we get an answer
 const uint16_t timeOut = 700;				 // time out for ACK handling
