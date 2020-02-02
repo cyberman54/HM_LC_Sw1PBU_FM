@@ -22,7 +22,7 @@ const uint8_t devParam[] PROGMEM = {
 	/* Device Info      3 byte */ 0x41, 0x01, 0x00									// describes device, not completely clear yet. includes amount of channels
 };
 
-const uint8_t HMID[3] = {0x29, 0xF2, 0x6F};  // very important, must be unique. identifier for the device in the network
+const uint8_t HMID[3] = {0x29, 0xF2, 0x6E};  // very important, must be unique. identifier for the device in the network
 const uint8_t HMCID[3] = {0x25, 0x77, 0xF0}; // optional, HMID of CCU (makes device paired)
 const uint8_t maxRetries = 3;				 // how often a string should be send out until we get an answer
 const uint16_t timeOut = 700;				 // time out for ACK handling

@@ -44,8 +44,8 @@ boolean lastCurrentPin = false;
 boolean isInitialized = false;
 const uint8_t pinCurrent = 31;
 const uint8_t pinRelay = 12;
-const unsigned long minImpulsLength = 2000;
-const uint8_t sendSensorIntervalSec = 150;
+const unsigned long minImpulsLength = 500;
+const unsigned long sendSensorIntervalSec = 20;
 
 void currentImpuls()
 {
@@ -177,8 +177,8 @@ void HM_Status_Request(uint8_t cnl, uint8_t *data, uint8_t len)
 #if defined(RL_DBG)
 	Serial << F("\nxtStattus_Request; cnl: ") << pHex(cnl) << F(", data: ") << pHex(data, len) << "\n\n";
 #endif
-	// if (cnl == 3)
-	//	rl[0].sendStatus(); // send the current status
+	if ((cnl == 3) || (cnl == 4))
+		rl[0].sendStatus(); // send the current status
 }
 
 void HM_Set_Cmd(uint8_t cnl, uint8_t *data, uint8_t len)
@@ -389,11 +389,13 @@ void setup()
 	ADCSRA = 0;			   // disable ADC
 	power_all_disable();   // all devices off
 	power_timer0_enable(); // we need timer0 for delay function
-	//power_timer2_enable();													// we need timer2 for PWM
+	power_timer2_enable(); // we need timer2 for PWM
+#ifdef USE_SERIAL
 	power_usart0_enable(); // it's the serial console
-	//power_twi_enable();														// i2c interface, not needed yet
+#endif
+	//power_twi_enable();	// i2c interface, not needed yet
 	power_spi_enable(); // enables SPI master
-	//power_adc_enable();
+	power_adc_enable();
 
 	// init HM module
 	hm.init();			 // initialize HM module
@@ -436,10 +438,10 @@ void loop()
 	parser.poll(); // handle serial input from console
 #endif
 	hm.poll();  // HOMEMATIC task scheduler
-	bk->poll(); // key handler poll
+	bk->poll(); // key handler poll 
 	rl->poll(); // relay handler poll
 
-	if (millis() - lastCurrentInfoSentTime > sendSensorIntervalSec * 1000UL)
+	if (millis() - lastCurrentInfoSentTime > sendSensorIntervalSec * 1000)
 	{
 		lastCurrentInfoSentTime = millis();
 		hm.sendSensorData(0, 0, lastSensorImpulsLength / (50 * sendSensorIntervalSec), 0, 0); // send message
@@ -461,7 +463,7 @@ void loop()
 #ifdef USE_SERIAL
 			Serial << F("New Powersense: ") << currentSense << '\n';
 #endif
-			// hm.sendInfoActuatorStatus(4, currentSense ? 0xC8 : 0x00, 0);
+			hm.sendInfoActuatorStatus(4, currentSense ? 0xC8 : 0x00, 0);
 			lastCurrentSense = currentSense;
 		}
 		sei();

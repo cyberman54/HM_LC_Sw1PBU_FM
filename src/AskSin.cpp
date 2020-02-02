@@ -2300,41 +2300,29 @@ void HM::mainSettings(uint16_t *regPtr, uint16_t *peerPtr)
 
 	reg.ch_1.list1.dblPress = 2;
 	reg.ch_1.list1.sign = 0;
-	reg.ch_1.list1.longPress = 4;
-
+	reg.ch_1.list1.longPress = 7;
 	reg.ch_1.peer[0].peerNeedsBurst = 1;
 	reg.ch_1.peer[0].expectAES = 0;
-	reg.ch_1.peer[1].peerNeedsBurst = 1;
-	reg.ch_1.peer[1].expectAES = 0;
-	reg.ch_1.peer[2].peerNeedsBurst = 0;
-	reg.ch_1.peer[2].expectAES = 0;
+
+	reg.ch_2.list1.dblPress = 2;
+	reg.ch_2.list1.sign = 0;
+	reg.ch_2.list1.longPress = 7;
 	reg.ch_2.peer[0].peerNeedsBurst = 1;
 	reg.ch_2.peer[0].expectAES = 0;
-	reg.ch_2.peer[1].peerNeedsBurst = 1;
-	reg.ch_2.peer[1].expectAES = 0;
-	reg.ch_2.peer[2].peerNeedsBurst = 0;
-	reg.ch_2.peer[2].expectAES = 0;
 
-	reg.ch_3.peer[0].shActionType = 1;
-	reg.ch_3.peer[0].lgActionType = 1;
-	reg.ch_3.peer[0].shSwJtOff = 3;
-	reg.ch_3.peer[0].lgSwJtOff = 3;
-	reg.ch_3.peer[0].shSwJtOn = 6;
-	reg.ch_3.peer[0].lgSwJtOn = 6;
+	reg.ch_4.peer[0].shActionType = 1;
+	reg.ch_4.peer[0].lgActionType = 1;
+	reg.ch_4.peer[0].shSwJtOff = 3;
+	reg.ch_4.peer[0].lgSwJtOff = 3;
+	reg.ch_4.peer[0].shSwJtOn = 6;
+	reg.ch_4.peer[0].lgSwJtOn = 6;
 
-	reg.ch_3.peer[1].shActionType = 0;
-	reg.ch_3.peer[1].lgActionType = 1;
-	reg.ch_3.peer[1].shSwJtOff = 3;
-	reg.ch_3.peer[1].lgSwJtOff = 3;
-	reg.ch_3.peer[1].shSwJtOn = 3;
-	reg.ch_3.peer[1].lgSwJtOn = 3;
-
-	reg.ch_3.peer[2].shActionType = 0;
-	reg.ch_3.peer[2].lgActionType = 1;
-	reg.ch_3.peer[2].shSwJtOff = 6;
-	reg.ch_3.peer[2].lgSwJtOff = 6;
-	reg.ch_3.peer[2].shSwJtOn = 6;
-	reg.ch_3.peer[2].lgSwJtOn = 6;
+	reg.ch_4.peer[1].shActionType = 0;
+	reg.ch_4.peer[1].lgActionType = 1;
+	reg.ch_4.peer[1].shSwJtOff = 3;
+	reg.ch_4.peer[1].lgSwJtOff = 3;
+	reg.ch_4.peer[1].shSwJtOn = 3;
+	reg.ch_4.peer[1].lgSwJtOn = 3;
 
 	/*
 	peerdb[0][0] = 0x013BD621; // 21D63B ch1
