@@ -1,5 +1,8 @@
 Alternative Open Source Firmware for HM\_LC\_Sw1PBU\_FM
 ======================
+MODIFIED TO BUILD WITH PLATFORMIO
+ARDUINO IDE not needed
+======================
 
 Asksin Library ported to Homematic HM\-LC\-Sw1PBU\-FM as Custom Open Source Firmware speaking BidCos.
 
