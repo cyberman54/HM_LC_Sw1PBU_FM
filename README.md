@@ -5,7 +5,7 @@ MODIFIED TO BUILD WITH PLATFORMIO
 
 Asksin Library ported to Homematic HM\-LC\-Sw1PBU\-FM as Custom Open Source Firmware speaking BidCos.
 
-Ported Askin Library from FHEM Forum to Atmel ATmega 644A (https://github.com/trilu2000/AskSinLib). Runs with Arduino.
+Ported Askin Library from FHEM Forum to Atmel ATmega 644A (https://github.com/trilu2000/AskSinLib).
 
 Hardware:
 * CC1100 on 868,3 MHz speaking BidCos
@@ -48,23 +48,14 @@ Instructions Hardware:
 * The relay and current sense will not work while testing with 3,3 or 5V. Everything else will
 
 Instructions Software:
-* Install jabduino (https://github.com/jabdoa2/jabduino) into your Arduino hardware folder (important: there should be no minus in the foldername)
-    * Linux: /usr/share/arduino/hardware 
-    * Windows: folder "hardware" in your Arduino directory
-- Checkout to sketchbook/Asksin\_HM\_LC\_Sw1PBU\_FM (important: there should be no minus in the foldername)
-* Open Arduino
-* Open Sketch "Asksin\_HM\_LC\_Sw1PBU\_FM"
-* Select Tools->Board->"Jabduino ATmega644A"
-* Change HMID in Register.h to the original HMID of your device
-* Compile
-
-There are two ways to upload the firmware:
-* Version 1: Upload with programmer (works with or without arduino bootloader)
-* Version 2: Flash OTA Bootloader and flash firmware over the air
-    * OTA Bootloader can be found here: https://github.com/jabdoa2/Asksin_OTA_Bootloader
-    * You can use any Homematic OTA Flasher (hmland flash-ota, eq3 Homematic Windows USB Updater, CCU2 or FHEM)
-
-Version 1 is good for testing while developing with attached UART. However, before installing the device into the wall, I would recommend to switch to version 2 to be able to update firmware while mounted in the wall.
+* Install visual studio code https://code.visualstudio.com/ OR atom-editor https://atom.io/
+* Install platformio extension, see https://platformio.org/
+* Install git extension
+* git clone this repository to your platformio workspace
+* Change HMID and serialID in Register.h to the original HMID of your device
+* You can use any AVR-compatible ISP-programmer, select it in platformio.ini (e.g. upload_protocol = stk500v2)
+* connect the programmer to the top board of the HM-LC-Sw1PBU-FM , as explained above
+* Build and upload with platformio (pio -t run)
 
 Features ([x] working [p] partial/not finished [ ] not working):
 - [x] Pairing of central via Register.h
